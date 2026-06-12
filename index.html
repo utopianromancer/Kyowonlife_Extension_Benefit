@@ -17,15 +17,24 @@
         }
         /* 스크롤바 숨기기 */
         ::-webkit-scrollbar { width: 0px; background: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 이미지 화질 최적화 */
+        .crisp-image {
+            image-rendering: -webkit-optimize-contrast;
+            transform: translateZ(0);
+        }
     </style>
 </head>
 <body class="text-gray-800 antialiased relative pb-10">
 
     <!-- Header Section -->
     <header class="bg-white px-5 pt-12 pb-8 rounded-b-[2.5rem] shadow-sm relative z-10">
+        <!-- 1. 로고 이미지 영역 (하드코딩 텍스트 -> 이미지 파일로 변경) -->
         <div class="flex justify-center mb-6">
             <div class="h-10 flex items-center justify-center">
-                <span class="text-2xl font-black tracking-tighter text-[#1E2E45]">KYOWON<span class="text-[#FF6600] ml-1">LIFE</span></span>
+                <img src="./교원라이프_CI.png" alt="교원라이프 로고" class="h-7 object-contain">
             </div>
         </div>
         
@@ -45,39 +54,37 @@
 
     <!-- Main Content (Gift List) -->
     <main class="px-5 mt-[-20px] pt-12 z-0 relative" id="gift-list-container">
-        <!-- 데이터를 불러오는 중 표시 -->
         <div id="loading" class="text-center py-10 text-gray-400 text-sm">
             혜택 리스트를 불러오는 중입니다...
         </div>
     </main>
 
-    <!-- Modal (상세 이미지 통으로 보여주기) -->
+    <!-- Modal (상세 이미지 꽉 차게 보여주기) -->
     <div id="modal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl h-[85vh] flex flex-col transform translate-y-full transition-transform duration-300" id="modal-content">
+        <!-- 모달 높이를 85vh에서 90vh로 늘려 화면에 더 꽉 차게 수정 -->
+        <div class="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl h-[90vh] flex flex-col transform translate-y-full transition-transform duration-300" id="modal-content">
             
-            <!-- 모달 헤더 (닫기 버튼 등) -->
-            <div class="flex justify-between items-center p-5 border-b border-gray-100">
+            <div class="flex justify-between items-center p-5 border-b border-gray-100 shadow-sm z-10 bg-white rounded-t-3xl">
                 <h3 class="font-bold text-lg text-[#1E2E45]">상세 정보</h3>
-                <button onclick="closeModal()" class="p-2 bg-gray-100 rounded-full text-gray-500 active:bg-gray-200">
+                <button onclick="closeModal()" class="p-2 bg-gray-50 rounded-full text-gray-500 active:bg-gray-200">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             
-            <!-- 모달 콘텐츠 (통 이미지 스크롤 영역) -->
-            <div class="flex-1 overflow-y-auto w-full relative bg-gray-50">
-                <img id="modal-image" src="" alt="상세 이미지" class="w-full h-auto block">
+            <!-- 3. 상세 이미지 화질 개선 및 꽉 차게 렌더링 -->
+            <div class="flex-1 overflow-y-auto w-full relative bg-white no-scrollbar">
+                <img id="modal-image" src="" alt="상세 이미지" class="w-full h-auto block crisp-image">
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDK (v9 모듈 방식) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // =====================================================================
-        // 고객님이 첨부해주신 실제 Firebase 키 값 적용 완료
+        // [필수!] 기존 파이어베이스 연결 키 값을 이 아래에 다시 붙여넣어 주세요!
         // =====================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyDhElnMJlCdFYsyX1vQgP7XAdhsK9ccNAU",
@@ -92,53 +99,42 @@
 
         let db;
         try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
+            if(firebaseConfig.apiKey !== "AIzaSyDhElnMJlCdFYsyX1vQgP7XAdhsK9ccNAU") {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+            }
         } catch (e) {
             console.error("Firebase 초기화 에러: ", e);
         }
 
-        // 임시 데이터 (파이어베이스에 데이터가 아직 없을 때 보여질 화면)
         const mockGifts = [
             {
                 id: '1',
-                title: '장수워셔블카본매트',
-                subtitle: '올뉴블랙 에디션 SS (JMA-1055)',
-                badgeText: '4년 연장시 제공',
-                imageUrl: 'https://images.unsplash.com/photo-1505693314120-0d443867891c?q=80&w=800&auto=format&fit=crop',
-                detailImageUrl: 'https://images.unsplash.com/photo-1505693314120-0d443867891c?q=80&w=800&auto=format&fit=crop'
-            },
-            {
-                id: '2',
-                title: '다이슨 에어랩 멀티 스타일러',
-                subtitle: '컴플리트 롱 (빈카블루/로제)',
-                badgeText: '5년 연장시 제공',
-                imageUrl: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?q=80&w=800&auto=format&fit=crop',
-                detailImageUrl: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?q=80&w=800&auto=format&fit=crop'
+                title: '임시 데이터 불러오는중',
+                subtitle: '파이어베이스 키를 입력해주세요.',
+                badgeText: '연결 대기중',
+                imageUrl: 'https://placehold.co/600x600/e2e8f0/475569?text=Image',
+                detailImageUrl: 'https://placehold.co/800x2000/e2e8f0/475569?text=Detail'
             }
         ];
 
-        // 데이터 렌더링 함수
         function renderGifts(gifts) {
             const container = document.getElementById('gift-list-container');
-            container.innerHTML = ''; // 로딩 텍스트 제거
+            container.innerHTML = ''; 
 
             gifts.forEach(gift => {
                 const card = document.createElement('div');
                 card.className = 'glass-card rounded-3xl p-5 mb-6 relative overflow-hidden';
                 
-                const badgeHtml = gift.badgeText 
-                    ? `<div class="absolute top-4 left-4 z-10 bg-[#FF6600] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">${gift.badgeText}</div>` 
-                    : '';
-
+                // 2. 뱃지 겹침 현상 해결: 뱃지를 텍스트 위로 올리고 흐름(flow)에 맞게 배치
                 card.innerHTML = `
-                    ${badgeHtml}
-                    <div class="text-center mb-4 mt-2">
-                        <h2 class="text-xl font-extrabold text-[#1E2E45]">${gift.title}</h2>
-                        <p class="text-sm text-gray-500 font-medium mt-1">${gift.subtitle}</p>
+                    <div class="text-center mb-5 mt-1">
+                        ${gift.badgeText ? `<div class="inline-block bg-[#FF6600] text-white text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow-sm mb-3">${gift.badgeText}</div>` : ''}
+                        <h2 class="text-[22px] font-extrabold text-[#1E2E45] leading-snug break-keep">${gift.title}</h2>
+                        <p class="text-sm text-gray-500 font-medium mt-1.5">${gift.subtitle}</p>
                     </div>
 
-                    <div class="w-full aspect-square rounded-2xl overflow-hidden bg-white shadow-inner relative cursor-pointer" onclick="openModal('${gift.detailImageUrl}')">
+                    <div class="w-full aspect-square rounded-2xl overflow-hidden bg-white border border-gray-100 relative cursor-pointer" onclick="openModal('${gift.detailImageUrl}')">
                         <img src="${gift.imageUrl}" alt="${gift.title}" class="w-full h-full object-cover">
                     </div>
 
@@ -152,7 +148,6 @@
             lucide.createIcons();
         }
 
-        // 데이터 가져오기
         async function fetchGifts() {
             if (db) {
                 try {
@@ -163,21 +158,22 @@
                     });
                     
                     if(giftsData.length > 0) {
-                        renderGifts(giftsData); // 실제 데이터 노출
+                        renderGifts(giftsData);
                     } else {
-                        renderGifts(mockGifts); // 데이터가 비어있으면 임시 화면 노출
+                        renderGifts(mockGifts); 
                     }
                 } catch (error) {
-                    console.error("Firebase 데이터 로드 에러:", error);
+                    console.error("데이터 로드 에러:", error);
                     renderGifts(mockGifts);
                 }
+            } else {
+                setTimeout(() => renderGifts(mockGifts), 500); 
             }
         }
 
         window.addEventListener('DOMContentLoaded', fetchGifts);
     </script>
 
-    <!-- UI Interaction Scripts (Modal) -->
     <script>
         lucide.createIcons();
 
@@ -194,7 +190,7 @@
                 modalContent.classList.remove('translate-y-full');
             }, 10);
             
-            document.body.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden'; 
         }
 
         function closeModal() {
@@ -206,7 +202,8 @@
             
             setTimeout(() => {
                 modal.classList.add('hidden');
-                document.body.style.overflow = '';
+                document.body.style.overflow = ''; 
+                document.getElementById('modal-image').src = ''; // 닫을 때 이미지 초기화
             }, 300);
         }
     </script>
