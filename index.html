@@ -81,7 +81,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // =====================================================================
         // 스크린샷에서 추출한 실제 파이어베이스 키 값을 적용했습니다!
@@ -119,8 +119,6 @@
             const container = document.getElementById('gift-list-container');
             container.innerHTML = ''; 
 
-            // 사은품명을 가나다순 등으로 정렬하려면 이곳에 정렬 로직을 추가할 수 있습니다.
-            
             gifts.forEach(gift => {
                 const card = document.createElement('div');
                 card.className = 'glass-card rounded-3xl p-5 mb-6 relative overflow-hidden';
@@ -150,7 +148,8 @@
         async function fetchGifts() {
             if (db) {
                 try {
-                    const querySnapshot = await getDocs(collection(db, "gifts"));
+                    const q = query(collection(db, "gifts"), orderBy("order", "asc"));
+                    const querySnapshot = await getDocs(q);
                     const giftsData = [];
                     querySnapshot.forEach((doc) => {
                         giftsData.push({ id: doc.id, ...doc.data() });
@@ -167,7 +166,7 @@
                     }
                 } catch (error) {
                     console.error("데이터 로드 에러:", error);
-                    document.getElementById('loading').innerHTML = `데이터베이스 읽기 권한을 확인해주세요. (규칙 탭 수정 필요)`;
+                    document.getElementById('loading').innerHTML = `데이터 로드 실패. (데이터베이스 규칙 확인 또는 콘솔의 인덱스 생성 링크 클릭 필요)`;
                 }
             }
         }
