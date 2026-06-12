@@ -84,7 +84,7 @@
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // =====================================================================
-        // [필수!] 기존 파이어베이스 연결 키 값을 이 아래에 다시 붙여넣어 주세요!
+        // 스크린샷에서 추출한 실제 파이어베이스 키 값을 적용했습니다!
         // =====================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyDhElnMJlCdFYsyX1vQgP7XAdhsK9ccNAU",
@@ -92,17 +92,14 @@
             projectId: "kyowonlife-extension-benefit",
             storageBucket: "kyowonlife-extension-benefit.firebasestorage.app",
             messagingSenderId: "127835300688",
-            appId: "1:127835300688:web:fa82a57e52dd6df4c58255",
-            measurementId: "G-7Q0K8XR18D"
+            appId: "1:127835300688:web:fa82a57e52dd6df4c58255"
         };
         // =====================================================================
 
         let db;
         try {
-            if(firebaseConfig.apiKey !== "AIzaSyDhElnMJlCdFYsyX1vQgP7XAdhsK9ccNAU") {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-            }
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
         } catch (e) {
             console.error("Firebase 초기화 에러: ", e);
         }
@@ -110,9 +107,9 @@
         const mockGifts = [
             {
                 id: '1',
-                title: '임시 데이터 불러오는중',
-                subtitle: '파이어베이스 키를 입력해주세요.',
-                badgeText: '연결 대기중',
+                title: '파이어베이스 데이터 없음',
+                subtitle: '콘솔에서 데이터를 추가해주세요.',
+                badgeText: '데이터 확인 필요',
                 imageUrl: 'https://placehold.co/600x600/e2e8f0/475569?text=Image',
                 detailImageUrl: 'https://placehold.co/800x2000/e2e8f0/475569?text=Detail'
             }
@@ -122,6 +119,8 @@
             const container = document.getElementById('gift-list-container');
             container.innerHTML = ''; 
 
+            // 사은품명을 가나다순 등으로 정렬하려면 이곳에 정렬 로직을 추가할 수 있습니다.
+            
             gifts.forEach(gift => {
                 const card = document.createElement('div');
                 card.className = 'glass-card rounded-3xl p-5 mb-6 relative overflow-hidden';
@@ -135,10 +134,10 @@
                     </div>
 
                     <div class="w-full aspect-square rounded-2xl overflow-hidden bg-white border border-gray-100 relative cursor-pointer" onclick="openModal('${gift.detailImageUrl}')">
-                        <img src="${gift.imageUrl}" alt="${gift.title}" class="w-full h-full object-cover">
+                        <img src="${gift.imageUrl}" alt="${gift.title}" class="w-full h-full object-cover crisp-image">
                     </div>
 
-                    <button onclick="openModal('${gift.detailImageUrl}')" class="w-full mt-5 bg-[#1E2E45] text-white py-3.5 rounded-xl font-bold flex justify-center items-center gap-2 active:bg-gray-800 transition-colors">
+                    <button onclick="openModal('${gift.detailImageUrl}')" class="w-full mt-5 bg-[#1E2E45] text-white py-3.5 rounded-xl font-bold flex justify-center items-center gap-2 active:bg-gray-800 transition-colors shadow-sm">
                         상세정보 보기
                         <i data-lucide="chevron-right" class="w-4 h-4"></i>
                     </button>
@@ -160,14 +159,16 @@
                     if(giftsData.length > 0) {
                         renderGifts(giftsData);
                     } else {
-                        renderGifts(mockGifts); 
+                        // 파이어베이스는 연결되었으나 'gifts' 컬렉션에 문서가 없을 때
+                        document.getElementById('loading').innerHTML = `
+                            파이어베이스 연결 성공!<br>
+                            이제 콘솔에서 'gifts' 컬렉션을 만들고 데이터를 추가해주세요.
+                        `;
                     }
                 } catch (error) {
                     console.error("데이터 로드 에러:", error);
-                    renderGifts(mockGifts);
+                    document.getElementById('loading').innerHTML = `데이터베이스 읽기 권한을 확인해주세요. (규칙 탭 수정 필요)`;
                 }
-            } else {
-                setTimeout(() => renderGifts(mockGifts), 500); 
             }
         }
 
